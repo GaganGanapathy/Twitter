@@ -7,7 +7,10 @@ const userSchema = new Schema(
     username: String,
     email: String,
     password: String,
-    picture: String,
+    picture: {
+      url: String,
+      filename: String
+    },
     location: String,
     dob: Date,
     followers: [

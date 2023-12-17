@@ -22,7 +22,7 @@ mongoose
     console.log("Connection Error", error)
   })
 
-app.use("/API", auth)
+app.use("/api", auth)
 
 app.get("/", (req, res) => {
   res.send("working")

@@ -10,17 +10,20 @@ const tweetSchema = new Schema(
     },
     likes: [
       {
-        types: Schema.Types.ObjectId,
+        type: Schema.Types.ObjectId,
         ref: "User"
       }
     ],
     retweetBy: [
       {
-        types: Schema.Types.ObjectId,
+        type: Schema.Types.ObjectId,
         ref: "User"
       }
     ],
-    image: String,
+    image: {
+      url: String,
+      filename: String
+    },
     replies: {
       type: Schema.Types.ObjectId,
       ref: "Tweet"
