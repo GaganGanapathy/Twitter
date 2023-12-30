@@ -7,7 +7,7 @@ function Register() {
       <div className="flex flex-col md:flex-row rounded-md overflow-hidden shadow-xl">
         <div className="bg-blue-500 text-white flex flex-col justify-center items-center w-auto md:w-48 py-4 md:py-0">
           <h2 className="text-2xl mb-1">Join Us</h2>
-          <div className="">
+          <div>
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
