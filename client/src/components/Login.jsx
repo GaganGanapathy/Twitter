@@ -1,11 +1,41 @@
-import React from "react"
-import { Link } from "react-router-dom"
+import React, { useState, useContext } from "react"
+import { Link, useNavigate } from "react-router-dom"
+import axios from "axios"
+import { toast } from "react-toastify"
+import { MyContext } from "../MyContext"
 
 function Login() {
+  const [username, setUsername] = useState("")
+  const [password, setPassword] = useState("")
+
+  const { setUser } = useContext(MyContext)
+
+  const navigate = useNavigate()
+
+  const login = async (e) => {
+    try {
+      e.preventDefault()
+      toast("Logging you In")
+      const result = await axios.post(
+        `${import.meta.env.VITE_URL}/auth/login`,
+        {
+          username,
+          password
+        }
+      )
+      if (result.status === 200) {
+        toast("Logged in sucessfully")
+        setUser(result.data.result)
+        navigate("/home")
+      }
+    } catch (error) {
+      toast(error.response.data.error)
+    }
+  }
   return (
     <div className="h-screen flex  justify-center items-center bg-slate-100">
-      <div className="flex flex-col md:flex-row rounded-md overflow-hidden shadow-xl">
-        <div className="bg-blue-500 text-white flex flex-col justify-center items-center w-auto md:w-48 py-4 md:py-0">
+      <div className="flex rounded-md overflow-hidden shadow-xl">
+        <div className="bg-blue-500 text-white flex flex-col justify-center items-center w-48 py-0">
           <h2 className="text-2xl mb-1">Welcome Back</h2>
           <div>
             <svg
@@ -30,13 +60,21 @@ function Login() {
             type="text"
             placeholder="Username"
             className="border-slate-400 border-[1px] rounded-md px-2 py-1 "
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
           />
           <input
-            type="text"
+            type="password"
             placeholder="Password"
             className="border-slate-400 border-[1px] rounded-md px-2 py-1 "
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
           />
-          <button className="bg-black text-white rounded-md w-min px-2 py-1">
+          <button
+            className="bg-black text-white rounded-md w-min px-2 py-1"
+            type="submit"
+            onClick={login}
+          >
             Login
           </button>
           <p>

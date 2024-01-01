@@ -1,9 +1,12 @@
-import React from "react"
+import React, { useContext } from "react"
+import { MyContext } from "../MyContext"
 
 function Sidebar() {
+  const { user } = useContext(MyContext)
+
   return (
     <div className="w-1/4">
-      <div className=" ms-auto w-1/2">
+      <div className=" ms-auto flex justify-end">
         <div className="flex flex-col justify-between h-screen  pb-10 pe-5">
           <div className="flex flex-col gap-y-3">
             {/* logo */}
@@ -76,8 +79,8 @@ function Sidebar() {
           <div className="flex items-center gap-x-2 ps-2">
             <div className="bg-slate-300 rounded-full w-10 h-10"></div>
             <div>
-              <p>John Doe</p>
-              <p>@John</p>
+              <p>{user.user.name}</p>
+              <p>@{user.user.username}</p>
             </div>
           </div>
         </div>

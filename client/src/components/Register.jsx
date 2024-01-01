@@ -1,11 +1,41 @@
-import React from "react"
-import { Link } from "react-router-dom"
+import React, { useState } from "react"
+import { Link, useNavigate } from "react-router-dom"
+import axios from "axios"
+import { toast } from "react-toastify"
 
 function Register() {
+  const [fullName, setFullName] = useState("")
+  const [email, setEmail] = useState("")
+  const [userName, setUserName] = useState("")
+  const [password, setPassword] = useState("")
+
+  const navigate = useNavigate()
+
+  const handleSubmitForm = async (e) => {
+    try {
+      e.preventDefault()
+      toast("Working on it")
+      const result = await axios.post(
+        `${import.meta.env.VITE_URL}/auth/register`,
+        {
+          name: fullName,
+          email,
+          username: userName,
+          password
+        }
+      )
+      if (result.status === 201) {
+        toast(result.data.result)
+        navigate("/")
+      }
+    } catch (error) {
+      toast(error.response.data.error)
+    }
+  }
   return (
     <div className="h-screen flex  justify-center items-center bg-slate-100">
-      <div className="flex flex-col md:flex-row rounded-md overflow-hidden shadow-xl">
-        <div className="bg-blue-500 text-white flex flex-col justify-center items-center w-auto md:w-48 py-4 md:py-0">
+      <div className="flex  rounded-md overflow-hidden shadow-xl">
+        <div className="bg-blue-500 text-white flex flex-col justify-center items-center w-48 py-4">
           <h2 className="text-2xl mb-1">Join Us</h2>
           <div>
             <svg
@@ -28,33 +58,46 @@ function Register() {
           <h3 className="text-2xl font-medium">Register</h3>
           <input
             type="text"
+            name="name"
             placeholder="Full Name"
-            className="border-slate-400 border-[1px] rounded-md px-2 py-1 "
+            className="border-slate-400 border-[1px] rounded-md px-2 py-1"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
           />
           <input
             type="text"
+            name="email"
             placeholder="Email"
-            className="border-slate-400 border-[1px] rounded-md px-2 py-1 "
+            className="border-slate-400 border-[1px] rounded-md px-2 py-1"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
           />
           <input
             type="text"
+            name="username"
             placeholder="Username"
-            className="border-slate-400 border-[1px] rounded-md px-2 py-1 "
+            className="border-slate-400 border-[1px] rounded-md px-2 py-1"
+            value={userName}
+            onChange={(e) => setUserName(e.target.value)}
           />
           <input
-            type="text"
+            type="password"
+            name="password"
             placeholder="Password"
-            className="border-slate-400 border-[1px] rounded-md px-2 py-1 "
+            className="border-slate-400 border-[1px] rounded-md px-2 py-1"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
           />
-          <button className="bg-black text-white rounded-md w-min px-2 py-1">
+          <button
+            className="bg-black text-white rounded-md w-min px-2 py-1"
+            type="submit"
+            onClick={handleSubmitForm}
+          >
             Register
           </button>
           <p>
             Already Registered?{" "}
-            <Link
-              to="/register"
-              className="text-blue-500 underline font-semibold"
-            >
+            <Link to="/" className="text-blue-500 underline font-semibold">
               Login
             </Link>
           </p>

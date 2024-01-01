@@ -39,7 +39,7 @@ router.post("/auth/register", async (req, res) => {
       password: hashedPassword
     })
     await user.save()
-    return res.status(200).json({ result: "User created successfully" })
+    return res.status(201).json({ result: "User created successfully" })
   } catch (error) {
     console.error("Register Error", error)
   }
@@ -78,11 +78,15 @@ router.post("/auth/login", async (req, res) => {
 
 //single user datail
 router.get("/auth/user/:id", async (req, res) => {
-  const { id } = req.params
-  const result = await User.findById(id)
-    .populate("followers", "_id")
-    .populate("following", "_id")
-  res.send(200).json({ result })
+  try {
+    const { id } = req.params
+    const result = await User.findById(id)
+      .populate("followers", "_id")
+      .populate("following", "_id")
+    res.send(200).json({ result })
+  } catch (error) {
+    console.log("Single detail error", error)
+  }
 })
 
 //follow user
