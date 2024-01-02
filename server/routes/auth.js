@@ -158,12 +158,12 @@ router.post(
 //create tweet
 router.post(
   "/api/tweet",
-  upload.single("profile"),
+  upload.single("image"),
   protectedRoute,
   async (req, res) => {
     try {
       const { content } = req.body
-      if (req.file.path) {
+      if (req.file) {
         await Tweet.create({
           content,
           image: { url: req.file.path, filename: req.file.filename },
@@ -230,7 +230,7 @@ router.get("/tweet/:id", async (req, res) => {
 })
 
 //all tweet details
-router.get("/tweet", protectedRoute, async (req, res) => {
+router.get("/tweet", async (req, res) => {
   try {
     const tweets = await Tweet.find({}).sort({ createdAt: -1 })
     res.status(200).json({ result: tweets })
