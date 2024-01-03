@@ -1,9 +1,80 @@
-import React from "react"
+import React, { useState, useContext, useEffect } from "react"
 import { ToastContainer, toast } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
+import { MyContext } from "../MyContext"
+import axios from "axios"
 
-function Tweet({ image, content }) {
-  const notify = () => toast("working")
+function Tweet({ _id, getTweets }) {
+  const { user } = useContext(MyContext)
+  const [tweet, setTweet] = useState({})
+
+  const singleTweetDetail = async () => {
+    const tweet = await axios.get(`${import.meta.env.VITE_URL}/tweet/${_id}`)
+    setTweet(tweet.data.result)
+  }
+
+  useEffect(() => {
+    singleTweetDetail()
+  }, [])
+
+  const like = tweet.likes?.some((item) => item._id === user.user._id)
+
+  const handleDelete = async () => {
+    try {
+      const result = await axios.delete(
+        `${import.meta.env.VITE_URL}/tweet/${_id}`,
+        {
+          headers: {
+            "Content-type": "application/json",
+            Authorization: "Bearer " + user.token
+          }
+        }
+      )
+      toast(result.data.result)
+      getTweets()
+    } catch (error) {
+      toast("Something went wrong")
+      console.log(error)
+    }
+  }
+
+  const handleLike = async () => {
+    try {
+      if (like) {
+        const result = await axios.put(
+          `${import.meta.env.VITE_URL}/tweet/${_id}/dislike`,
+          { _id },
+          {
+            headers: {
+              "Content-type": "application/json",
+              Authorization: "Bearer " + user.token
+            }
+          }
+        )
+        if (result.status === 200) {
+          toast(result.data.result)
+        }
+      } else {
+        const result = await axios.put(
+          `${import.meta.env.VITE_URL}/tweet/${_id}/like`,
+          { _id },
+          {
+            headers: {
+              "Content-type": "application/json",
+              Authorization: "Bearer " + user.token
+            }
+          }
+        )
+        if (result.status === 200) {
+          toast(result.data.result)
+        }
+      }
+      singleTweetDetail()
+    } catch (error) {
+      toast("Something went wrong")
+      console.log(error)
+    }
+  }
   return (
     <>
       <div className="w-full border justify-center p-2 flex flex-col hover:bg-[#E1F5FE]">
@@ -27,14 +98,14 @@ function Tweet({ image, content }) {
           <span>Reposted by john</span>
         </div>
         <div className="flex">
-          <div className=" bg-slate-300 border border-red-800 rounded-full overflow-hidden w-20 h-10">
+          <div className=" bg-slate-300 text-center  rounded-[50%] overflow-hidden w-14 h-14">
             <img
-              className="object-center"
+              className="object-cover"
               src="https://images.unsplash.com/photo-1541562232579-512a21360020?w=400&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTF8fGFuaW1lfGVufDB8fDB8fHww"
               alt=""
             />
           </div>
-          <div className="flex flex-col ms-3">
+          <div className="flex flex-col ms-3 w-full">
             <p className="flex justify-between">
               <span>
                 <span className="font-semibold me-1">@John</span>
@@ -44,7 +115,7 @@ function Tweet({ image, content }) {
                 </span>
                 <span className="font-light text-slate-400">Date</span>
               </span>
-              <button className="me-2" onClick={notify}>
+              <button className="me-2" onClick={handleDelete}>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
@@ -61,25 +132,40 @@ function Tweet({ image, content }) {
                 </svg>
               </button>
             </p>
-            <p>{content}</p>
-            <img
-              className="w-80 h-80"
-              src="https://images.unsplash.com/photo-1581833971358-2c8b550f87b3?w=400&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8YW5pbWV8ZW58MHx8MHx8fDA%3D"
-              alt=""
-            />
+            <p className="mb-1">{tweet.content}</p>
+            {tweet.image && (
+              <img className="w-80 h-80" src={tweet.image.url} alt="" />
+            )}
             <div className="p-1 flex">
               <p className="flex me-3">
-                <button>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                    className="text-red-600 w-6 h-6"
-                  >
-                    <path d="m11.645 20.91-.007-.003-.022-.012a15.247 15.247 0 0 1-.383-.218 25.18 25.18 0 0 1-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0 1 12 5.052 5.5 5.5 0 0 1 16.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 0 1-4.244 3.17 15.247 15.247 0 0 1-.383.219l-.022.012-.007.004-.003.001a.752.752 0 0 1-.704 0l-.003-.001Z" />
-                  </svg>
+                <button onClick={handleLike}>
+                  {like ? (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                      className="text-red-600 w-6 h-6"
+                    >
+                      <path d="m11.645 20.91-.007-.003-.022-.012a15.247 15.247 0 0 1-.383-.218 25.18 25.18 0 0 1-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0 1 12 5.052 5.5 5.5 0 0 1 16.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 0 1-4.244 3.17 15.247 15.247 0 0 1-.383.219l-.022.012-.007.004-.003.001a.752.752 0 0 1-.704 0l-.003-.001Z" />
+                    </svg>
+                  ) : (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth="1.5"
+                      stroke="currentColor"
+                      className="text-red-600 w-6 h-6"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"
+                      />
+                    </svg>
+                  )}
                 </button>
-                <span className="text-lg ms-1">3</span>
+                <span className="text-lg ms-1">{tweet.likes?.length}</span>
               </p>
               <p className="flex me-3">
                 <button>

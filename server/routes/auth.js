@@ -181,7 +181,7 @@ router.post(
 )
 
 //like tweet
-router.post("/tweet/:id/like", protectedRoute, async (req, res) => {
+router.put("/tweet/:id/like", protectedRoute, async (req, res) => {
   try {
     const { id } = req.params
     await Tweet.updateOne({ _id: id }, { $addToSet: { likes: req.user._id } })
@@ -192,7 +192,7 @@ router.post("/tweet/:id/like", protectedRoute, async (req, res) => {
 })
 
 //dislike tweet
-router.post("/tweet/:id/dislike", protectedRoute, async (req, res) => {
+router.put("/tweet/:id/dislike", protectedRoute, async (req, res) => {
   try {
     const { id } = req.params
     await Tweet.updateOne({ _id: id }, { $pull: { likes: req.user._id } })
@@ -218,6 +218,7 @@ router.post("/api/tweet/:id/reply", protectedRoute, async (req, res) => {
 //single tweet detail
 router.get("/tweet/:id", async (req, res) => {
   try {
+    const { id } = req.params
     const tweetDetail = await Tweet.findById(id)
       .populate("tweetedBy")
       .populate("likes")
@@ -244,7 +245,7 @@ router.delete("/tweet/:id", protectedRoute, async (req, res) => {
   try {
     const { id } = req.params
     const tweetToBeDeleted = await Tweet.findById(id)
-    if (req.user._id === tweetToBeDeleted.tweetedBy) {
+    if (req.user._id.equals(tweetToBeDeleted.tweetedBy)) {
       await Tweet.findByIdAndDelete(id)
       res.status(200).json({ result: "Deleted Sucessfully" })
     } else {
