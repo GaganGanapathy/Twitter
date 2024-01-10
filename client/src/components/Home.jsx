@@ -142,7 +142,7 @@ function Home() {
             </Modal.Footer>
           </Modal>
         </div>
-        <div className="">
+        <div>
           {tweets.map((tweet) => (
             <Tweet key={tweet._id} _id={tweet._id} getTweets={getTweets} />
           ))}
