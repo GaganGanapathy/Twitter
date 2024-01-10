@@ -2,6 +2,7 @@ const express = require("express")
 const router = express.Router()
 const User = require("../models/user_model")
 const Tweet = require("../models/tweet_model")
+const Reply = require("../models/reply_model")
 const bcrypt = require("bcryptjs")
 const jwt = require("jsonwebtoken")
 const protectedRoute = require("../middleware/protectedRoute")
@@ -62,10 +63,10 @@ router.post("/auth/login", async (req, res) => {
     if (didMatch) {
       const jwtToken = jwt.sign({ _id: userInDB._id }, process.env.JWT_SECRET)
       const userInfo = {
-        email: userInDB.email,
-        username: userInDB.username,
+        _id: userInDB._id,
         name: userInDB.name,
-        _id: userInDB._id
+        username: userInDB.username,
+        picture: userInDB.picture
       }
       return res
         .status(200)
@@ -83,7 +84,17 @@ router.get("/auth/user/:id", async (req, res) => {
     const result = await User.findById(id)
       .populate("followers", "_id")
       .populate("following", "_id")
-    res.send(200).json({ result })
+    const data = {
+      name: result.name,
+      username: result.username,
+      picture: result.picture,
+      location: result.location,
+      dob: result?.dob?.toISOString(),
+      followers: result.followers,
+      following: result.following,
+      joined: result.createdAt.toISOString()
+    }
+    res.status(200).json({ result: data })
   } catch (error) {
     console.log("Single detail error", error)
   }
@@ -95,7 +106,7 @@ router.put("/auth/user/:id/follow", protectedRoute, async (req, res) => {
     const { id } = req.params
     await User.updateOne({ _id: id }, { $push: { followers: req.user._id } })
     await User.updateOne({ _id: req.user._id }, { $push: { following: id } })
-    res.status(200).json({ result: "Updated successfully" })
+    res.status(200).json({ result: "following" })
   } catch (error) {
     console.log("Follow error", error)
   }
@@ -107,7 +118,7 @@ router.put("/auth/user/:id/unfollow", protectedRoute, async (req, res) => {
     const { id } = req.params
     await User.updateOne({ _id: id }, { $pull: { followers: req.user._id } })
     await User.updateOne({ _id: req.user._id }, { $pull: { following: id } })
-    res.status(200).json({ result: "Updated successfully" })
+    res.status(200).json({ result: "Unfollowed" })
   } catch (error) {
     console.log("Unfollow error", error)
   }
@@ -117,7 +128,10 @@ router.put("/auth/user/:id/unfollow", protectedRoute, async (req, res) => {
 router.put("/user/edit", protectedRoute, async (req, res) => {
   try {
     const { name, dob, location } = req.body
-    await User.updateOne({ _id: req.user._id }, { name, dob, location })
+    await User.updateOne(
+      { _id: req.user._id },
+      { name, dob: new Date(dob), location }
+    )
     res.status(200).json({ result: "Updated succesfully" })
   } catch (error) {
     console.log("Edit user error", error)
@@ -136,8 +150,8 @@ router.post("/user/:id/tweets", protectedRoute, async (req, res) => {
 
 //upload profile picture
 router.post(
-  "/user/:id/uploadProfilePic",
-  upload.single("image"),
+  "/user/uploadProfilePic",
+  upload.single("profile"),
   protectedRoute,
   async (req, res) => {
     try {
@@ -207,11 +221,38 @@ router.post("/api/tweet/:id/reply", protectedRoute, async (req, res) => {
   try {
     const { id } = req.params
     const { content } = req.body
-    const newTweet = await Tweet.create({ content, tweetedBy: req.user._id })
-    await Tweet.updateOne({ _id: id }, { $push: { replies: newTweet._id } })
+    const newReply = await Reply.create({
+      comment: content,
+      repliedBy: req.user._id
+    })
+    await Tweet.updateOne({ _id: id }, { $push: { replies: newReply._id } })
     res.status(200).json({ result: "replied successfully" })
   } catch (error) {
     console.log("Reply error", error)
+  }
+})
+
+//reply details
+router.get("/:id/replies", async (req, res) => {
+  try {
+    const { id } = req.params
+    const result = await Reply.findById(id)
+    res.status(200).json({ result })
+  } catch (error) {
+    console.log("Replies error", error)
+  }
+})
+
+//reply delete
+router.put("/reply/:id/delete", protectedRoute, async (req, res) => {
+  try {
+    const { id } = req.params
+    const { tweet_id } = req.body
+    await Tweet.updateOne({ _id: tweet_id }, { $pull: { replies: id } })
+    await Reply.findByIdAndDelete(id)
+    res.status(200).json({ result: "Reply succesfully deleted" })
+  } catch (error) {
+    console.log("reply delete error", error)
   }
 })
 
@@ -220,10 +261,31 @@ router.get("/tweet/:id", async (req, res) => {
   try {
     const { id } = req.params
     const tweetDetail = await Tweet.findById(id)
-      .populate("tweetedBy")
+      .populate("tweetedBy", "_id name username picture")
       .populate("likes")
       .populate("retweetBy")
-      .populate("replies")
+      .populate({
+        path: "replies",
+        select: "comment"
+      })
+      .populate({
+        path: "replies",
+        populate: {
+          path: "repliedBy",
+          model: "User",
+          select: "name username picture"
+        }
+      })
+      .populate({
+        path: "replies",
+        populate: {
+          path: "replies",
+          populate: {
+            path: "repliedBy",
+            model: "User"
+          }
+        }
+      })
     res.status(200).json({ result: tweetDetail })
   } catch (error) {
     console.log("Single tweet detail error", error)
@@ -268,9 +330,20 @@ router.post("/tweet/:id/retweet", protectedRoute, async (req, res) => {
     )
     retweet
       ? res.status(200).json({ result: "retweeted Sucessfully" })
-      : res.status(301).json({ result: "User already retweeted" })
+      : res.status(301).json({ result: "you have already retweeted this post" })
   } catch (error) {
     console.log("Retweet Error", error)
+  }
+})
+
+//user Tweets
+router.get("/user/:id/tweets", async (req, res) => {
+  try {
+    const { id } = req.params
+    const userTweets = await Tweet.find({ tweetedBy: id })
+    res.status(200).json({ result: userTweets })
+  } catch (error) {
+    console.log("User Tweets error", error)
   }
 })
 

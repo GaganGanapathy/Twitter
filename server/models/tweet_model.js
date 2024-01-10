@@ -24,10 +24,12 @@ const tweetSchema = new Schema(
       url: String,
       filename: String
     },
-    replies: {
-      type: Schema.Types.ObjectId,
-      ref: "Tweet"
-    }
+    replies: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Reply"
+      }
+    ]
   },
   { timestamps: true }
 )
